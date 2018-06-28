@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 expandtab ts=4:
+'''A set of functions to convert a Gill 2D Sonic datafile to NetCDF'''
 from pandas.io.parsers import read_csv, read_fwf
 from pandas.tseries.offsets import DateOffset
 
@@ -35,14 +36,19 @@ def get_sonic_data(infiles):
 
     Example good dataline:
 
-    `2017-08-30 01:17:51,UTC,2017-08-30T01:17:52.906838 ^BQ,+002.03,+000.64,M,00,^C`
-    `^B` and `^C` here are ASCII "Start of Text" (STX) and "End of Text" (ETX)
+    ::
+
+        2017-08-30 01:17:51,UTC,2017-08-30T01:17:52.906838 ^BQ,+002.03,+000.64,M,00,^C
+
+    ``^B`` and ``^C`` here are ASCII "Start of Text" (STX) and "End of Text" (ETX)
     
     Incoming datafiles are stripped of datalines that:
 
         #. Are not 77 characters long
         #. Do not end in the Gill "working" statuscode
         #. Contain "odd" characters (i.e. are corrupted in some way)
+
+        :param infiles: list(-like) of data filenames
     '''
 
     sonic = pd.DataFrame()
