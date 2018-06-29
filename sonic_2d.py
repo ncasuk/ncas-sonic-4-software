@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 expandtab ts=4:
-'''A set of functions to convert a Gill 2D Sonic datafile to NetCDF'''
-from pandas.io.parsers import read_csv, read_fwf
-from pandas.tseries.offsets import DateOffset
-
+"""A set of functions to convert a Gill 2D Sonic datafile to NetCDF"""
+import time
+import csv
+from io import StringIO
 import pandas as pd
 import numpy as np
 import glob
-from datetime import datetime
+from datetime import datetime, timedelta
 from os.path import join, getmtime, basename
 
-from io import StringIO
+from netCDF4 import Dataset
+from pandas.io.parsers import read_csv, read_fwf
+from pandas.tseries.offsets import DateOffset
+
 
 
 def polar(x, y, deg=True): # radian if deg=False; degree if deg=True
@@ -29,7 +32,7 @@ def polar(x, y, deg=True): # radian if deg=False; degree if deg=True
 
 
 def get_sonic_data(infiles):
-    '''Takes Gill Windsonic 2D datafile(s), prefixed by ISO-format system date, timezone, and timestamp of reading, and returns a Pandas dataframe containing T, U, V, r, θ.
+    """Takes Gill Windsonic 2D datafile(s), prefixed by ISO-format system date, timezone, and timestamp of reading, and returns a Pandas dataframe containing T, U, V, r, θ.
     
     Note that Gill Windsonics use unconventional defns for U & V. 
     (see http://novalynx.com/products/download/WindSonicWebManual.pdf )
@@ -49,12 +52,13 @@ def get_sonic_data(infiles):
         #. Contain "odd" characters (i.e. are corrupted in some way)
 
         :param infiles: list(-like) of data filenames
-    '''
+        :return: a Pandas DataFrame of the sonic data
+    """
 
     sonic = pd.DataFrame()
     for infile in infiles:
         with open(infile,'rb') as f:
-            '''pre-process to remove dodgy lines. Good lines are 77 chrs long and end in M,00,^C '''
+            """pre-process to remove dodgy lines. Good lines are 77 chrs long and end in M,00,^C """
             okchars = dict.fromkeys("0123456789: \nUTCQM+,.-"+chr(2)+chr(3))
 
             memory_file = StringIO()
@@ -81,6 +85,74 @@ def get_sonic_data(infiles):
 
     return sonic
 
+def read_amf_variables(csv_var_file):
+    """
+    Reads an AMF data project CSV-format variable list into a structure.
+    """
+    out = {}
+    with open(csv_var_file,'r') as f:
+        varfile = csv.DictReader(f)
+        for line in varfile:
+            if len(line['Variable']) >0:
+                out[line['Variable']] = {}
+                current_var = line['Variable']
+            else:
+                out[current_var][line['Attribute']] = line['Value']
+
+    return out
+
+
+def sonic_netcdf(sonic):
+    """
+    Takes a DataFrame eith 2D sonic data and outputs a well-formed NetCDF
+    using appropriate conventions.
+
+    :param sonic: DataFrame with a Pandas DateTime index, U / ms¯¹, V / ms¯¹, wind speed / ms¯¹, and wind direction / degrees
+    """
+
+    #instantiate NetCDF output
+    output_file = "sonic_2d_data.nc"
+    dataset = Dataset(output_file, "w", format="NETCDF4_CLASSIC")
+
+    # Create the time dimension - with unlimited length
+    time_dim = dataset.createDimension("time", None)
+
+    # Create the time variable
+    base_time = sonic.index[0]
+    sonic['timeoffsets'] = (sonic.index - base_time).total_seconds()
+
+    time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
+    time_var = dataset.createVariable("time", np.float64, ("time",))
+    time_var.units = time_units
+    time_var.standard_name = "time"
+    time_var.calendar = "standard"
+    time_var[:] = sonic.timeoffsets.values
+
+    #get variable descriptions
+    amfvars = read_amf_variables("mean-winds.xlsx - Variables - Specific.csv")
+
+    tempvar = {}
+    #Create wind speed and wind direction vars
+    for each in ['wind_speed','wind_from_direction','eastward_wind','northward_wind']:  
+        tempvar[each] = dataset.createVariable(amfvars[each]['name'], amfvars[each]['type'], (amfvars[each]['dimension'],))
+        tempvar[each].long_name = amfvars[each]['long_name']
+        tempvar[each].units = amfvars[each]['units']
+        tempvar[each].standard_name = amfvars[each]['standard_name']
+        tempvar[each].calendar = "standard"
+
+    tempvar['wind_speed'] = sonic.r.values
+    tempvar['wind_from_direction'] = sonic.theta.values
+    tempvar['eastward_wind'] = sonic.U.values
+    tempvar['northward_wind'] = sonic.V.values
+
+    #  Set   the   global   attributes
+    dataset.Conventions  =  "CF-1.6" 
+    dataset.institution  =  "NCAS"   
+    dataset.title  =  "2D Sonic NetCDF file" 
+    dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
+
+    dataset.close()
+
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -91,4 +163,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     DATADIR=args.DATADIR
 
-    print(get_sonic_data(args.infiles).theta.mean())
+    sonic_netcdf(get_sonic_data(args.infiles))
