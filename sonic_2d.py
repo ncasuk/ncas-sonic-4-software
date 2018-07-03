@@ -165,5 +165,5 @@ def arguments():
     return parser
 
 if __name__ == '__main__':
-    args = arguments.parse_args()
+    args = arguments().parse_args()
     sonic_netcdf(get_sonic_data(args.infiles), args.output_file)
