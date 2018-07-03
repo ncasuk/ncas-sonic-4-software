@@ -104,10 +104,12 @@ def read_amf_variables(csv_var_file):
 
 def sonic_netcdf(sonic):
     """
-    Takes a DataFrame eith 2D sonic data and outputs a well-formed NetCDF
+    Takes a DataFrame with 2D sonic data and outputs a well-formed NetCDF
     using appropriate conventions.
 
     :param sonic: DataFrame with a Pandas DateTime index, U / ms¯¹, V / ms¯¹, wind speed / ms¯¹, and wind direction / degrees
+
+    Test plot with (e.g.) ``cis plot wind_speed:sonic_2d_data.nc``
     """
 
     #instantiate NetCDF output
@@ -138,12 +140,11 @@ def sonic_netcdf(sonic):
         tempvar[each].long_name = amfvars[each]['long_name']
         tempvar[each].units = amfvars[each]['units']
         tempvar[each].standard_name = amfvars[each]['standard_name']
-        tempvar[each].calendar = "standard"
 
-    tempvar['wind_speed'] = sonic.r.values
-    tempvar['wind_from_direction'] = sonic.theta.values
-    tempvar['eastward_wind'] = sonic.U.values
-    tempvar['northward_wind'] = sonic.V.values
+    tempvar['wind_speed'][:] = sonic.r.values
+    tempvar['wind_from_direction'][:] = sonic.theta.values
+    tempvar['eastward_wind'][:] = sonic.U.values
+    tempvar['northward_wind'][:] = sonic.V.values
 
     #  Set   the   global   attributes
     dataset.Conventions  =  "CF-1.6" 
@@ -152,7 +153,6 @@ def sonic_netcdf(sonic):
     dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
 
     dataset.close()
-
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
