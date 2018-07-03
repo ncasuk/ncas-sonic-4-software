@@ -13,6 +13,14 @@ Welcome to NCAS 2D Sonic to NetCDF's documentation!
 
     modules.rst
 
+Command-Line Usage
+==================
+
+.. argparse::
+    :filename: ../sonic_2d.py
+    :func: arguments
+    :prog: sonic_2d.py
+
 Indices and tables
 ==================
 

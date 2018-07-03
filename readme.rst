@@ -15,3 +15,9 @@ You can then generate the docs by (for HTML):
 or (for a PDF - you will need a working LaTeX installation):
 
 ``cd docs && make latex``
+
+Usage
+=====
+e.g.
+
+``python sonic_2d.py sonic_2017-08-30.txt``
