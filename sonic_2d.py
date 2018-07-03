@@ -102,7 +102,7 @@ def read_amf_variables(csv_var_file):
     return out
 
 
-def sonic_netcdf(sonic):
+def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
     """
     Takes a DataFrame with 2D sonic data and outputs a well-formed NetCDF
     using appropriate conventions.
@@ -113,7 +113,6 @@ def sonic_netcdf(sonic):
     """
 
     #instantiate NetCDF output
-    output_file = "sonic_2d_data.nc"
     dataset = Dataset(output_file, "w", format="NETCDF4_CLASSIC")
 
     # Create the time dimension - with unlimited length
@@ -154,13 +153,17 @@ def sonic_netcdf(sonic):
 
     dataset.close()
 
-if __name__ == '__main__':
+def arguments():
+    """
+    Processes command-line arguments, returns parser.
+    """
     from argparse import ArgumentParser
     parser=ArgumentParser()
-    parser.add_argument('--dir', dest="DATADIR", help="base data directory (e.g. /data/2d-sonic/ )", default='.')
-    parser.add_argument('infiles',nargs='+')
+    parser.add_argument('--outfile', dest="output_file", help="NetCDF output filename", default='sonic_2d_data.nc')
+    parser.add_argument('infiles',nargs='+', help="Gill 2D Windsonic data files" )
 
-    args = parser.parse_args()
-    DATADIR=args.DATADIR
+    return parser
 
-    sonic_netcdf(get_sonic_data(args.infiles))
+if __name__ == '__main__':
+    args = arguments.parse_args()
+    sonic_netcdf(get_sonic_data(args.infiles), args.output_file)
