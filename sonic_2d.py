@@ -3,6 +3,7 @@
 """A set of functions to convert a Gill 2D Sonic datafile to NetCDF"""
 import time
 import csv
+import subprocess 
 from io import StringIO
 import pandas as pd
 import numpy as np
@@ -32,7 +33,7 @@ def polar(x, y, deg=True): # radian if deg=False; degree if deg=True
 
 
 def get_sonic_data(infiles):
-    """Takes Gill Windsonic 2D datafile(s), prefixed by ISO-format system date, timezone, and timestamp of reading, and returns a Pandas dataframe containing T, U, V, r, θ.
+    """Takes Gill Windsonic 2D datafile(s), prefixed by ISO-format system date, timezone, and timestamp of reading, and returns a Pandas dataframe containing time, U, V, r, θ.
     
     Note that Gill Windsonics use unconventional defns for U & V. 
     (see http://novalynx.com/products/download/WindSonicWebManual.pdf )
@@ -119,8 +120,18 @@ def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
     time_dim = dataset.createDimension("time", None)
 
     # Create the time variable
-    base_time = sonic.index[0]
+    base_time = datetime(1970,1,1,0,0,0)
     sonic['timeoffsets'] = (sonic.index - base_time).total_seconds()
+
+    #create the location dimensions - length 1 for stationary devices
+    lat  = dataset.createDimension('latitude', 1)
+    lon  = dataset.createDimension('longitude', 1)
+
+    #create the location variables
+    latitudes = dataset.createVariable('latitude', np .float32,  ('latitude',))
+    latitudes.units = 'degrees_north'
+    longitudes = dataset.createVariable('longitude', np .float32,  ('longitude',))
+    longitudes.units = 'degrees_east'
 
     time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
     time_var = dataset.createVariable("time", np.float64, ("time",))
@@ -146,10 +157,13 @@ def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
     tempvar['northward_wind'][:] = sonic.V.values
 
     #  Set   the   global   attributes
-    dataset.Conventions  =  "CF-1.6" 
     dataset.institution  =  "NCAS"   
     dataset.title  =  "2D Sonic NetCDF file" 
     dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
+    dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1] # get the git repository URL
+    dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
+    dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
+    dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
 
     dataset.close()
 
