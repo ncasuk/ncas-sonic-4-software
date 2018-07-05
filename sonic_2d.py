@@ -151,8 +151,13 @@ def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc", metadata="2d-sonic-met
     #create the location variables
     latitudes = dataset.createVariable('latitude', np .float32,  ('latitude',))
     latitudes.units = 'degrees_north'
+    latitudes.standard_name = 'latitude'
+    latitudes.long_name = 'Latitude'
+
     longitudes = dataset.createVariable('longitude', np .float32,  ('longitude',))
     longitudes.units = 'degrees_east'
+    longitudes.standard_name = 'longitude'
+    longitudes.long_name = 'Longitude'
 
     time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
     time_var = dataset.createVariable("time", np.float64, ("time",))
