@@ -1,0 +1,36 @@
+Conventions,"CF-1.6, NCAS-AMF-1.0"
+source,"Cape Verde Atmospheric Observatory Wind Sonic"
+instrument_manufacturer,"Gill Instruments Ltd."
+instrument_model,"Windsonic Option 2"
+instrument_serial_number
+instrument_software,"N/A"
+instrument_software_version,"N/A"
+creator_name,"Dan Walker"
+creator_email,"daniel.walker@ncas.ac.uk"
+creator_url,"http://orcid.org/0000-0002-1081-2112"
+institution,"National Centre for Atmospheric Science (NCAS)"
+calibration_sensitivity
+calibration_certification_date
+calibration_certification_url
+sampling_interval
+averaging_interval
+product_version
+processing_level
+last_revised_date
+project
+project_principal_investigator
+project_principal_investigator_email
+project_principal_investigator_url
+licence,"Data usage licence - UK Government Open Licence agreement: http://www.nationalarchives.gov.uk/doc/open-government-licence"
+acknowledgement,"Acknowledgement of NCAS as the data provider is required whenever and wherever these data are used"
+platform
+platform_type
+title
+featureType
+platform_altitude
+platform_latitude,16.864058
+platform_longitude,-24.867815
+location_keywords
+amf_vocabularies_release
+history
+comment
