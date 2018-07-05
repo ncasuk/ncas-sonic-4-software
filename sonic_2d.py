@@ -102,8 +102,29 @@ def read_amf_variables(csv_var_file):
 
     return out
 
+def read_dataset_attributes(comvarfile):
+    """
+    Reads a csv file of the form 
+       attrib1name,attrib1value
+       attrib2name,attrib2value
+       ...
+       attribNname,attribNvalue
 
-def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
+    and returns a dict of the results
+        :param comvarfile: CSV file of attribute/value pairs
+        :return: dictionary of attribte/value pairs
+
+    """
+    out= {}
+    with open(comvarfile, 'r') as g:
+        comvarfile_reader = csv.reader(g)
+        for line in comvarfile_reader:
+            if len(line) == 2:
+                out[line[0]] = line[1]
+
+    return out
+
+def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc", metadata="2d-sonic-metadata"):
     """
     Takes a DataFrame with 2D sonic data and outputs a well-formed NetCDF
     using appropriate conventions.
@@ -143,6 +164,16 @@ def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
     #get variable descriptions
     amfvars = read_amf_variables("mean-winds.xlsx - Variables - Specific.csv")
 
+    #get common attributes
+    comattrs = read_dataset_attributes(metadata)
+
+    longitudes[:] = [comattrs['platform_longitude']]
+    latitudes[:] = [comattrs['platform_latitude']]
+
+    #remove lat/long
+    comattrs.pop('platform_longitude',None)
+    comattrs.pop('platform_latitude',None)
+
     tempvar = {}
     #Create wind speed and wind direction vars
     for each in ['wind_speed','wind_from_direction','eastward_wind','northward_wind']:  
@@ -164,6 +195,13 @@ def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc"):
     dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
     dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
     dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
+    if latitudes.shape == (1,):
+        dataset.geospatial_bounds = '('+latitudes[0].min().astype('str')+'N ' + longitudes[0].min().astype('str')+'E)'
+    else: #for future proofing, handles moving platform
+        dataset.geospatial_bounds = '('+latitudes[:].min().astype('str')+'N ' + longitudes[:].min().astype('str')+'E, '+latitudes[:].max().astype('str')+'N ' + longitudes[:].max().astype('str')+'E)'
+
+    #add all remaining attribs
+    dataset.setncatts(comattrs)
 
     dataset.close()
 
@@ -174,10 +212,11 @@ def arguments():
     from argparse import ArgumentParser
     parser=ArgumentParser()
     parser.add_argument('--outfile', dest="output_file", help="NetCDF output filename", default='sonic_2d_data.nc')
+    parser.add_argument('--metadata', dest="metadata", help="Metadata filename", default='2d-sonic-metadata')
     parser.add_argument('infiles',nargs='+', help="Gill 2D Windsonic data files" )
 
     return parser
 
 if __name__ == '__main__':
     args = arguments().parse_args()
-    sonic_netcdf(get_sonic_data(args.infiles), args.output_file)
+    sonic_netcdf(get_sonic_data(args.infiles), args.output_file, args.metadata)
