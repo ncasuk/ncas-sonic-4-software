@@ -123,7 +123,7 @@ htmlhelp_basename = 'NCAS2DSonictoNetCDFdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
-
+latex_engine = 'xelatex'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
@@ -132,6 +132,10 @@ latex_elements = {
     # The font size ('10pt', '11pt' or '12pt').
     #
     'pointsize': '12pt',
+    'fontpkg': r'''
+\setmainfont{Linux Libertine O}
+\setsansfont{Open Sans Light}
+\setmonofont{Ubuntu Mono}''',
 
     # Additional stuff for the LaTeX preamble.
     #
@@ -141,6 +145,7 @@ latex_elements = {
     #
     # 'figure_align': 'htbp',
 }
+latex_logo = os.path.join('_static','LOGO_10.pdf')
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
