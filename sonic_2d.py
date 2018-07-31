@@ -230,7 +230,7 @@ if __name__ == '__main__':
     try:
         os.makedirs(args.outdir,0755)
     except OSError:
-        print ("creation of directory %s failed" % args.outdir)
+         print ("") 
     else:
         print ("Successfully create dirctory %s" % args.outdir)
     sonic_netcdf(get_sonic_data(args.infiles), os.path.join(args.outdir, args.output_file), args.metadata)
