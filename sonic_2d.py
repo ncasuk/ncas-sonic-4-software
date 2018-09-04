@@ -10,6 +10,7 @@ import numpy as np
 import glob
 from datetime import datetime, timedelta
 from os.path import join, getmtime, basename
+from amfutils.read_variables import read_amf_variables
 
 from netCDF4 import Dataset
 from pandas.io.parsers import read_csv, read_fwf
@@ -86,21 +87,21 @@ def get_sonic_data(infiles):
 
     return sonic
 
-def read_amf_variables(csv_var_file):
-    """
-    Reads an AMF data project CSV-format variable list into a structure.
-    """
-    out = {}
-    with open(csv_var_file,'r') as f:
-        varfile = csv.DictReader(f)
-        for line in varfile:
-            if len(line['Variable']) >0:
-                out[line['Variable']] = {}
-                current_var = line['Variable']
-            else:
-                out[current_var][line['Attribute']] = line['Value']
-
-    return out
+#def read_amf_variables(csv_var_file):
+#    """
+#    Reads an AMF data project CSV-format variable list into a structure.
+#    """
+#    out = {}
+#    with open(csv_var_file,'r') as f:
+#        varfile = csv.DictReader(f)
+#        for line in varfile:
+#            if len(line['Variable']) >0:
+#                out[line['Variable']] = {}
+#                current_var = line['Variable']
+#            else:
+#                out[current_var][line['Attribute']] = line['Value']
+#
+#   return out
 
 def read_dataset_attributes(comvarfile):
     """

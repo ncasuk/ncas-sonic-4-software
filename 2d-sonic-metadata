@@ -24,7 +24,7 @@ project_principal_investigator_url
 licence,"Data usage licence - UK Government Open Licence agreement: http://www.nationalarchives.gov.uk/doc/open-government-licence"
 acknowledgement,"Acknowledgement of NCAS as the data provider is required whenever and wherever these data are used"
 platform
-platform_type
+platform_type,stationary_platform
 title
 featureType
 platform_altitude
