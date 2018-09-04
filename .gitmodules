@@ -1,0 +1,3 @@
+[submodule "amfutils"]
+	path = amfutils
+	url = https://github.com/ncasuk/amfutils
