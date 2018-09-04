@@ -3,15 +3,16 @@
 """A set of functions to convert a Gill 2D Sonic datafile to NetCDF"""
 import time
 import csv
+import os
 import subprocess 
 from io import StringIO
 import pandas as pd
 import numpy as np
 import glob
 from datetime import datetime, timedelta
+
 from os.path import join, getmtime, basename
 from amfutils.read_variables import read_amf_variables
-
 from netCDF4 import Dataset
 from pandas.io.parsers import read_csv, read_fwf
 from pandas.tseries.offsets import DateOffset
@@ -125,7 +126,8 @@ def read_dataset_attributes(comvarfile):
 
     return out
 
-def sonic_netcdf(sonic, output_file = "sonic_2d_data.nc", metadata="2d-sonic-metadata"):
+def sonic_netcdf(sonic, output_file ="sonic_2d_data.nc", metadata="2d-sonic-metadata"):
+
     """
     Takes a DataFrame with 2D sonic data and outputs a well-formed NetCDF
     using appropriate conventions.
@@ -220,9 +222,17 @@ def arguments():
     parser.add_argument('--outfile', dest="output_file", help="NetCDF output filename", default='sonic_2d_data.nc')
     parser.add_argument('--metadata', dest="metadata", help="Metadata filename", default='2d-sonic-metadata')
     parser.add_argument('infiles',nargs='+', help="Gill 2D Windsonic data files" )
+    parser.add_argument('--outdir', help="Specify directory in which output has to be created.", default="netcdf")
 
     return parser
 
 if __name__ == '__main__':
     args = arguments().parse_args()
-    sonic_netcdf(get_sonic_data(args.infiles), args.output_file, args.metadata)
+   
+    try:
+        os.makedirs(args.outdir,0755)
+    except OSError:
+         print ("") 
+    else:
+        print ("Successfully create dirctory %s" % args.outdir)
+    sonic_netcdf(get_sonic_data(args.infiles), os.path.join(args.outdir, args.output_file), args.metadata)
