@@ -230,7 +230,7 @@ if __name__ == '__main__':
     args = arguments().parse_args()
    
     try:
-        os.makedirs(args.outdir,0755)
+        os.makedirs(args.outdir,mode=0o755)
     except OSError:
          print ("") 
     else:
