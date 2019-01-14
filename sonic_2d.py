@@ -20,6 +20,8 @@ class GillWindSonic(AMFInstrument):
     """
     class to convert a Gill 2D Sonic datafile to NetCDF
     """
+    
+    amf_variables_file = "mean-winds.xlsx - Variables - Specific.csv"
 
     def polar(self, x, y, deg=True): # radian if deg=False; degree if deg=True
         """ Convert from rectangular (x,y) to polar (r,w)
@@ -87,7 +89,11 @@ class GillWindSonic(AMFInstrument):
                 #if successful, add to output
                 if isinstance(sonic_in, pd.DataFrame):
                     sonic = pd.concat([sonic,sonic_in])
-    
+
+        #set start and end times
+        self.time_coverage_start = sonic.index[0].strftime(self.timeformat)
+        self.time_coverage_end = sonic.index[-1].strftime(self.timeformat)
+
         return sonic
     
     def read_dataset_attributes(self, comvarfile):
@@ -112,7 +118,7 @@ class GillWindSonic(AMFInstrument):
     
         return out
     
-    def sonic_netcdf(self, sonic, output_file ="sonic_2d_data.nc", metadata="2d-sonic-metadata"):
+    def sonic_netcdf(self, sonic, output_dir="./netcdf/", metadata="2d-sonic-metadata"):
     
         """
         Takes a DataFrame with 2D sonic data and outputs a well-formed NetCDF
@@ -124,7 +130,7 @@ class GillWindSonic(AMFInstrument):
         """
     
         #instantiate NetCDF output
-        dataset = Dataset(output_file, "w", format="NETCDF4_CLASSIC")
+        dataset = Dataset(os.path.join(output_dir, self.filename("mean-winds","1")), "w", format="NETCDF4_CLASSIC")
     
         # Create the time dimension - with unlimited length
         time_dim = dataset.createDimension("time", None)
@@ -155,27 +161,22 @@ class GillWindSonic(AMFInstrument):
         time_var.calendar = "standard"
         time_var[:] = sonic.timeoffsets.values
     
-        #get variable descriptions
-        amfvars = self.read_amf_variables("mean-winds.xlsx - Variables - Specific.csv")
         
-    
-        #get common attributes
-        comattrs = self.read_dataset_attributes(metadata)
     
         #longitudes[:] = [comattrs['platform_longitude']]
         #latitudes[:] = [comattrs['platform_latitude']]
     
         #remove lat/long
-        comattrs.pop('platform_longitude',None)
-        comattrs.pop('platform_latitude',None)
+        self.raw_metadata.pop('platform_longitude',None)
+        self.raw_metadata.pop('platform_latitude',None)
     
         tempvar = {}
         #Create wind speed and wind direction vars
         for each in ['wind_speed','wind_from_direction','eastward_wind','northward_wind']:  
-            tempvar[each] = dataset.createVariable(amfvars[each]['name'], amfvars[each]['type'], (amfvars[each]['dimension'],))
-            tempvar[each].long_name = amfvars[each]['long_name']
-            tempvar[each].units = amfvars[each]['units']
-            tempvar[each].standard_name = amfvars[each]['standard_name']
+            tempvar[each] = dataset.createVariable(self.amfvars[each]['name'], self.amfvars[each]['type'], (self.amfvars[each]['dimension'],))
+            tempvar[each].long_name = self.amfvars[each]['long_name']
+            tempvar[each].units = self.amfvars[each]['units']
+            tempvar[each].standard_name = self.amfvars[each]['standard_name']
     
         tempvar['wind_speed'][:] = sonic.r.values
         tempvar['wind_from_direction'][:] = sonic.theta.values
@@ -196,13 +197,13 @@ class GillWindSonic(AMFInstrument):
         #    dataset.geospatial_bounds = '('+latitudes[:].min().astype('str')+'N ' + longitudes[:].min().astype('str')+'E, '+latitudes[:].max().astype('str')+'N ' + longitudes[:].max().astype('str')+'E)'
     
         #add all remaining attribs
-        dataset.setncatts(comattrs)
+        dataset.setncatts(self.raw_metadata)
     
         dataset.close()
     
 if __name__ == '__main__':
-    sn = GillWindSonic()
-    args = sn.arguments().parse_args()
+    args = GillWindSonic.arguments().parse_args()
+    sn = GillWindSonic(args.metadata)
    
     try:
         os.makedirs(args.outdir,mode=0o755)
@@ -211,4 +212,4 @@ if __name__ == '__main__':
          pass
     else:
         print ("Successfully create dirctory %s" % args.outdir)
-    sn.sonic_netcdf(sn.get_sonic_data(args.infiles), os.path.join(args.outdir, args.output_file), args.metadata)
+    sn.sonic_netcdf(sn.get_sonic_data(args.infiles), args.outdir, args.metadata)

@@ -1,7 +1,9 @@
+Variable,Value
 Conventions,"CF-1.6, NCAS-AMF-1.0"
 source,"Cape Verde Atmospheric Observatory Wind Sonic"
 instrument_manufacturer,"Gill Instruments Ltd."
 instrument_model,"Windsonic Option 2"
+instrument_name,ncas-sonic-4
 instrument_serial_number
 instrument_software,"N/A"
 instrument_software_version,"N/A"
@@ -23,7 +25,7 @@ project_principal_investigator_email
 project_principal_investigator_url
 licence,"Data usage licence - UK Government Open Licence agreement: http://www.nationalarchives.gov.uk/doc/open-government-licence"
 acknowledgement,"Acknowledgement of NCAS as the data provider is required whenever and wherever these data are used"
-platform
+platform_name,"Cape Verde Atmospheric Observatory"
 platform_type,stationary_platform
 title
 featureType
