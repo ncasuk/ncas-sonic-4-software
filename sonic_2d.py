@@ -130,10 +130,10 @@ class GillWindSonic(AMFInstrument):
         """
     
         #instantiate NetCDF output
-        dataset = Dataset(os.path.join(output_dir, self.filename("mean-winds","1")), "w", format="NETCDF4_CLASSIC")
+        self.dataset = Dataset(os.path.join(output_dir, self.filename("mean-winds","1")), "w", format="NETCDF4_CLASSIC")
     
         # Create the time dimension - with unlimited length
-        time_dim = dataset.createDimension("time", None)
+        time_dim = self.dataset.createDimension("time", None)
     
         # Create the time variable
         base_time = datetime(1970,1,1,0,0,0)
@@ -155,10 +155,14 @@ class GillWindSonic(AMFInstrument):
         #longitudes.long_name = 'Longitude'
     
         time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
-        time_var = dataset.createVariable("time", np.float64, ("time",))
+        time_var = self.dataset.createVariable("time", np.float64, dimensions=("time",))
         time_var.units = time_units
+        time_var.axis = 'T'
         time_var.standard_name = "time"
+        time_var.long_name = "Time (%s)" % time_units
         time_var.calendar = "standard"
+        time_var.type = "float64"
+        time_var.dimension = "time"
         time_var[:] = sonic.timeoffsets.values
     
         
@@ -173,10 +177,7 @@ class GillWindSonic(AMFInstrument):
         tempvar = {}
         #Create wind speed and wind direction vars
         for each in ['wind_speed','wind_from_direction','eastward_wind','northward_wind']:  
-            tempvar[each] = dataset.createVariable(self.amfvars[each]['name'], self.amfvars[each]['type'], (self.amfvars[each]['dimension'],))
-            tempvar[each].long_name = self.amfvars[each]['long_name']
-            tempvar[each].units = self.amfvars[each]['units']
-            tempvar[each].standard_name = self.amfvars[each]['standard_name']
+            tempvar[each] = self.amf_var_to_netcdf_var(each)
     
         tempvar['wind_speed'][:] = sonic.r.values
         tempvar['wind_from_direction'][:] = sonic.theta.values
@@ -184,22 +185,22 @@ class GillWindSonic(AMFInstrument):
         tempvar['northward_wind'][:] = sonic.V.values
     
         #  Set   the   global   attributes
-        dataset.institution  =  "NCAS"   
-        dataset.title  =  "2D Sonic NetCDF file" 
-        dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
-        dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1] # get the git repository URL
-        dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
-        dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
-        dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
+        self.dataset.institution  =  "NCAS"   
+        self.dataset.title  =  "2D Sonic NetCDF file" 
+        self.dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
+        self.dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1] # get the git repository URL
+        self.dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
+        self.dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
+        self.dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
         #if latitudes.shape == (1,):
         #    dataset.geospatial_bounds = '('+latitudes[0].min().astype('str')+'N ' + longitudes[0].min().astype('str')+'E)'
         #else: #for future proofing, handles moving platform
         #    dataset.geospatial_bounds = '('+latitudes[:].min().astype('str')+'N ' + longitudes[:].min().astype('str')+'E, '+latitudes[:].max().astype('str')+'N ' + longitudes[:].max().astype('str')+'E)'
     
         #add all remaining attribs
-        dataset.setncatts(self.raw_metadata)
+        self.dataset.setncatts(self.raw_metadata)
     
-        dataset.close()
+        self.dataset.close()
     
 if __name__ == '__main__':
     args = GillWindSonic.arguments().parse_args()
