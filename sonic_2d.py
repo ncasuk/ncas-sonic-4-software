@@ -140,19 +140,19 @@ class GillWindSonic(AMFInstrument):
         sonic['timeoffsets'] = (sonic.index - base_time).total_seconds()
     
         #create the location dimensions - length 1 for stationary devices
-        #lat  = dataset.createDimension('latitude', 1)
-        #lon  = dataset.createDimension('longitude', 1)
+        lat  = self.dataset.createDimension('latitude', 1)
+        lon  = self.dataset.createDimension('longitude', 1)
     
         #create the location variables
-        #latitudes = dataset.createVariable('latitude', np .float32,  ('latitude',))
-        #latitudes.units = 'degrees_north'
-        #latitudes.standard_name = 'latitude'
-        #latitudes.long_name = 'Latitude'
+        latitudes = self.dataset.createVariable('latitude', np .float32,  ('latitude',))
+        latitudes.units = 'degrees_north'
+        latitudes.standard_name = 'latitude'
+        latitudes.long_name = 'Latitude'
     
-        #longitudes = dataset.createVariable('longitude', np .float32,  ('longitude',))
-        #longitudes.units = 'degrees_east'
-        #longitudes.standard_name = 'longitude'
-        #longitudes.long_name = 'Longitude'
+        longitudes = self.dataset.createVariable('longitude', np .float32,  ('longitude',))
+        longitudes.units = 'degrees_east'
+        longitudes.standard_name = 'longitude'
+        longitudes.long_name = 'Longitude'
     
         time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
         time_var = self.dataset.createVariable("time", np.float64, dimensions=("time",))
@@ -167,8 +167,8 @@ class GillWindSonic(AMFInstrument):
     
         
     
-        #longitudes[:] = [comattrs['platform_longitude']]
-        #latitudes[:] = [comattrs['platform_latitude']]
+        longitudes[:] = [self.raw_metadata['platform_longitude']]
+        latitudes[:] = [self.raw_metadata['platform_latitude']]
     
         #remove lat/long
         self.raw_metadata.pop('platform_longitude',None)
@@ -188,7 +188,8 @@ class GillWindSonic(AMFInstrument):
         self.dataset.institution  =  "NCAS"   
         self.dataset.title  =  "2D Sonic NetCDF file" 
         self.dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
-        self.dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1] # get the git repository URL
+        self.dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1]#
+        self.dataset.processing_software_url = self.dataset.processing_software_url.replace('git@github.com:','https://github.com/') # get the git repository URL
         self.dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
         self.dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
         self.dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
