@@ -22,6 +22,7 @@ class GillWindSonic(AMFInstrument):
     """
     
     amf_variables_file = "mean-winds.xlsx - Variables - Specific.csv"
+    progname = __file__
 
     def polar(self, x, y, deg=True): # radian if deg=False; degree if deg=True
         """ Convert from rectangular (x,y) to polar (r,w)
@@ -176,18 +177,23 @@ class GillWindSonic(AMFInstrument):
     
         tempvar = {}
         #Create wind speed and wind direction vars
-        for each in ['wind_speed','wind_from_direction','eastward_wind','northward_wind']:  
-            tempvar[each] = self.amf_var_to_netcdf_var(each)
-    
-        tempvar['wind_speed'][:] = sonic.r.values
-        tempvar['wind_from_direction'][:] = sonic.theta.values
-        tempvar['eastward_wind'][:] = sonic.U.values
-        tempvar['northward_wind'][:] = sonic.V.values
+        if 'r' in sonic:
+            #r/θ polar windspeed/dir
+            for each in ['wind_speed','wind_from_direction']:
+                tempvar[each] = self.amf_var_to_netcdf_var(each)
+            tempvar['wind_speed'][:] = sonic.r.values
+            tempvar['wind_from_direction'][:] = sonic.theta.values
+        if 'U' in sonic:
+            #U/V Cartesian windspeed/dir
+            for each in ['eastward_wind','northward_wind']:  
+                tempvar[each] = self.amf_var_to_netcdf_var(each)
+            tempvar['eastward_wind'][:] = sonic.U.values
+            tempvar['northward_wind'][:] = sonic.V.values
     
         #  Set   the   global   attributes
         self.dataset.institution  =  "NCAS"   
         self.dataset.title  =  "2D Sonic NetCDF file" 
-        self.dataset.history = "%s:  Written  with  script:  sonic_2d.py" % (datetime.now().strftime("%x  %X"))
+        self.dataset.history = "%s:  Written  with  script:  %s" % (datetime.now().strftime("%x  %X"),self.progname)
         self.dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1]#
         self.dataset.processing_software_url = self.dataset.processing_software_url.replace('git@github.com:','https://github.com/') # get the git repository URL
         self.dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
