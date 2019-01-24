@@ -219,5 +219,5 @@ if __name__ == '__main__':
          #Dir already exists, probably
          pass
     else:
-        print ("Successfully create dirctory %s" % args.outdir)
+        print ("Successfully create directory %s" % args.outdir)
     sn.sonic_netcdf(sn.get_sonic_data(args.infiles), args.outdir, args.metadata)
