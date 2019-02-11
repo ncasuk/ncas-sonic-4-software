@@ -30,7 +30,7 @@ platform_type,stationary_platform
 deployment_mode,land
 title
 featureType
-platform_altitude
+platform_altitude,10.0
 platform_latitude,16.864058
 platform_longitude,-24.867815
 location_keywords

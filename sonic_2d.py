@@ -95,6 +95,7 @@ class GillWindSonic(AMFInstrument):
         self.time_coverage_start = sonic.index[0].strftime(self.timeformat)
         self.time_coverage_end = sonic.index[-1].strftime(self.timeformat)
 
+        self.rawdata = sonic
         return sonic
     
     def read_dataset_attributes(self, comvarfile):
@@ -130,50 +131,10 @@ class GillWindSonic(AMFInstrument):
         Test plot with (e.g.) ``cis plot wind_speed:sonic_2d_data.nc``
         """
     
-        #instantiate NetCDF output
-        self.dataset = Dataset(os.path.join(output_dir, self.filename("mean-winds","1")), "w", format="NETCDF4_CLASSIC")
-    
-        # Create the time dimension - with unlimited length
-        time_dim = self.dataset.createDimension("time", None)
-    
-        # Create the time variable
-        base_time = datetime(1970,1,1,0,0,0)
-        sonic['timeoffsets'] = (sonic.index - base_time).total_seconds()
-    
-        #create the location dimensions - length 1 for stationary devices
-        lat  = self.dataset.createDimension('latitude', 1)
-        lon  = self.dataset.createDimension('longitude', 1)
-    
-        #create the location variables
-        latitudes = self.dataset.createVariable('latitude', np .float32,  ('latitude',))
-        latitudes.units = 'degrees_north'
-        latitudes.standard_name = 'latitude'
-        latitudes.long_name = 'Latitude'
-    
-        longitudes = self.dataset.createVariable('longitude', np .float32,  ('longitude',))
-        longitudes.units = 'degrees_east'
-        longitudes.standard_name = 'longitude'
-        longitudes.long_name = 'Longitude'
-    
-        time_units = "seconds since " + base_time.strftime('%Y-%m-%d %H:%M:%S')
-        time_var = self.dataset.createVariable("time", np.float64, dimensions=("time",))
-        time_var.units = time_units
-        time_var.axis = 'T'
-        time_var.standard_name = "time"
-        time_var.long_name = "Time (%s)" % time_units
-        time_var.calendar = "standard"
-        time_var.type = "float64"
-        time_var.dimension = "time"
-        time_var[:] = sonic.timeoffsets.values
-    
-        
-    
-        longitudes[:] = [self.raw_metadata['platform_longitude']]
-        latitudes[:] = [self.raw_metadata['platform_latitude']]
-    
-        #remove lat/long
-        self.raw_metadata.pop('platform_longitude',None)
-        self.raw_metadata.pop('platform_latitude',None)
+        self.setup_dataset('mean-winds',"1")
+
+        #lat/long
+        self.land_coordinates()
     
         tempvar = {}
         #Create wind speed and wind direction vars
@@ -197,8 +158,6 @@ class GillWindSonic(AMFInstrument):
         self.dataset.processing_software_url = subprocess.check_output(["git", "remote", "-v"]).split()[1]#
         self.dataset.processing_software_url = self.dataset.processing_software_url.replace('git@github.com:','https://github.com/') # get the git repository URL
         self.dataset.processing_software_version = subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() #record the Git revision
-        self.dataset.time_coverage_start = sonic.index[0].strftime('%Y-%m-%dT%H:%M:%S')
-        self.dataset.time_coverage_end = sonic.index[-1].strftime('%Y-%m-%dT%H:%M:%S')
         #if latitudes.shape == (1,):
         #    dataset.geospatial_bounds = '('+latitudes[0].min().astype('str')+'N ' + longitudes[0].min().astype('str')+'E)'
         #else: #for future proofing, handles moving platform
